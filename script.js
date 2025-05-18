@@ -8,6 +8,32 @@ document.addEventListener('DOMContentLoaded', () => {
     const tpCountGroup = document.querySelector('.tp-count-group');
     const tpCountInput = document.getElementById('tp-count');
     const tpInputsContainer = document.getElementById('tp-inputs');
+    const instrumentSelect = document.getElementById('instrument-select');
+    const manualPipGroup = document.getElementById('manual-pip-group');
+    const pipValueInput = document.getElementById('pip-value');
+
+    // Instrument pip values
+    const instrumentPipValues = {
+        'sp500': { value: 0.25, pipValue: 12.50 },
+        'nasdaq': { value: 0.25, pipValue: 5.00 },
+        'xauusd': { value: 0.01, pipValue: 1.00 },
+        'btc': { value: 1.00, pipValue: 1.00 },
+        'eth': { value: 0.01, pipValue: 0.01 },
+        'eurusd': { value: 0.0001, pipValue: 10.00 }
+    };
+
+    // Instrument selection handling
+    instrumentSelect.addEventListener('change', () => {
+        const selectedInstrument = instrumentSelect.value;
+        if (selectedInstrument === 'manual') {
+            manualPipGroup.classList.remove('hidden');
+            pipValueInput.value = '';
+        } else {
+            manualPipGroup.classList.add('hidden');
+            pipValueInput.value = instrumentPipValues[selectedInstrument].pipValue;
+        }
+        updateCalculations();
+    });
 
     // Mode Toggle Handling
     modeToggles.forEach(toggle => {
@@ -36,6 +62,7 @@ document.addEventListener('DOMContentLoaded', () => {
     useTpCheckbox.addEventListener('change', () => {
         tpCountGroup.classList.toggle('hidden', !useTpCheckbox.checked);
         tpInputsContainer.classList.toggle('hidden', !useTpCheckbox.checked);
+        document.getElementById('tp-results').classList.toggle('hidden', !useTpCheckbox.checked);
         if (useTpCheckbox.checked) {
             generateTPInputs(tpCountInput.value);
         }
@@ -97,7 +124,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 stopLossDistance = Math.abs(entryPrice - stopLossPrice);
             } else {
                 stopLossDistance = parseFloat(document.getElementById('stop-loss-distance').value) || 0;
-                pipValue = parseFloat(document.getElementById('pip-value').value) || 0;
+                const selectedInstrument = instrumentSelect.value;
+                if (selectedInstrument === 'manual') {
+                    pipValue = parseFloat(pipValueInput.value) || 0;
+                } else {
+                    pipValue = instrumentPipValues[selectedInstrument].pipValue;
+                }
             }
 
             if (!stopLossDistance || (mode === 'pip' && !pipValue)) {
@@ -114,12 +146,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
             // Calculate take profit values if enabled
             if (useTpCheckbox.checked) {
+                const tpDetails = document.getElementById('tp-details');
+                tpDetails.innerHTML = '';
                 let totalProfit = 0;
                 const tpCount = parseInt(tpCountInput.value);
+                let allTPsSpecified = true;
 
                 for (let i = 1; i <= tpCount; i++) {
                     const tpInput = document.getElementById(`tp${i}-${mode}`);
-                    if (!tpInput || !tpInput.value) continue;
+                    if (!tpInput || !tpInput.value) {
+                        allTPsSpecified = false;
+                        continue;
+                    }
 
                     const tpValue = parseFloat(tpInput.value);
                     let tpDistance;
@@ -132,20 +170,47 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
 
                     const tpProfit = tpDistance * pipValue * lotSize;
+                    const tpPercentage = (tpProfit / accountBalance) * 100;
                     totalProfit += tpProfit;
 
-                    if (i === 1) {
-                        const tp1Percentage = (tpProfit / accountBalance) * 100;
-                        document.getElementById('tp1-profit').textContent = `$${tpProfit.toFixed(2)}`;
-                        document.getElementById('tp1-percentage').textContent = `${tp1Percentage.toFixed(2)}%`;
-                    }
+                    // Create TP result element
+                    const tpResult = document.createElement('div');
+                    tpResult.className = 'tp-result';
+                    tpResult.innerHTML = `
+                        <div class="tp-header">TP${i}</div>
+                        <div class="tp-profit">$${tpProfit.toFixed(2)}</div>
+                        <div class="tp-percentage">${tpPercentage.toFixed(2)}%</div>
+                    `;
+                    tpDetails.appendChild(tpResult);
                 }
 
-                document.getElementById('total-profit').textContent = `$${totalProfit.toFixed(2)}`;
+                // Show/hide TP results based on whether all TPs are specified
+                document.getElementById('tp-results').classList.toggle('hidden', !allTPsSpecified);
+
+                // Show total TP information if more than one TP is specified
+                const totalTPInfo = document.getElementById('total-tp-info');
+                if (tpCount > 1 && allTPsSpecified) {
+                    const totalTPPercentage = (totalProfit / accountBalance) * 100;
+                    document.getElementById('total-tp-profit').textContent = `$${totalProfit.toFixed(2)}`;
+                    document.getElementById('total-tp-percentage').textContent = `${totalTPPercentage.toFixed(2)}%`;
+                    totalTPInfo.classList.remove('hidden');
+                } else {
+                    totalTPInfo.classList.add('hidden');
+                }
+
+                // Calculate and display RRR if all TPs are specified
+                if (allTPsSpecified && dollarRisk > 0) {
+                    const rrr = totalProfit / dollarRisk;
+                    const rrrElement = document.getElementById('rrr-value');
+                    rrrElement.textContent = rrr.toFixed(2);
+                    rrrElement.classList.toggle('loss', rrr < 1);
+                } else {
+                    const rrrElement = document.getElementById('rrr-value');
+                    rrrElement.textContent = '0.00';
+                    rrrElement.classList.remove('loss');
+                }
             } else {
-                document.getElementById('tp1-profit').textContent = '$0.00';
-                document.getElementById('tp1-percentage').textContent = '0%';
-                document.getElementById('total-profit').textContent = '$0.00';
+                document.getElementById('tp-results').classList.add('hidden');
             }
         } catch (error) {
             console.error('Calculation error:', error);
