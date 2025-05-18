@@ -7,6 +7,8 @@
     --placeholder-color: #89898b;
     --active-bg: #ffffff;
     --active-text: #101013;
+    --profit-color: #4CAF50;
+    --loss-color: #ff4444;
 }
 
 * {
@@ -26,24 +28,40 @@ body {
     padding: 20px;
 }
 
+.calculator-wrapper {
+    display: flex;
+    gap: 24px;
+    width: 100%;
+    max-width: 1200px;
+    align-items: flex-start;
+}
+
 .calculator-container {
     background-color: var(--container-bg);
     border-radius: 12px;
-    padding: 24px;
-    width: 100%;
-    max-width: 600px;
+    padding: 20px;
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.input-container {
+    flex: 1;
+    min-width: 300px;
+}
+
+.results-container {
+    flex: 1;
+    min-width: 300px;
 }
 
 .mode-toggle {
     display: flex;
-    gap: 12px;
-    margin-bottom: 24px;
+    gap: 8px;
+    margin-bottom: 16px;
 }
 
 .toggle-btn {
     flex: 1;
-    padding: 12px;
+    padding: 10px;
     border: 1px solid var(--border-color);
     background-color: var(--container-bg);
     color: var(--text-color);
@@ -63,19 +81,20 @@ body {
 }
 
 .input-group {
-    margin-bottom: 16px;
+    margin-bottom: 12px;
 }
 
 label {
     display: block;
-    margin-bottom: 8px;
+    margin-bottom: 6px;
     color: var(--text-color);
 }
 
 input[type="number"],
-input[type="text"] {
+input[type="text"],
+.instrument-select {
     width: 100%;
-    padding: 12px;
+    padding: 10px;
     background-color: var(--container-bg);
     border: 1px solid var(--border-color);
     border-radius: 8px;
@@ -85,12 +104,14 @@ input[type="text"] {
 }
 
 input[type="number"]:hover,
-input[type="text"]:hover {
+input[type="text"]:hover,
+.instrument-select:hover {
     border-color: var(--border-hover);
 }
 
 input[type="number"]:focus,
-input[type="text"]:focus {
+input[type="text"]:focus,
+.instrument-select:focus {
     outline: none;
     border-color: var(--border-hover);
 }
@@ -103,7 +124,7 @@ input::placeholder {
     display: flex;
     align-items: center;
     gap: 8px;
-    margin-bottom: 16px;
+    margin-bottom: 12px;
 }
 
 input[type="checkbox"] {
@@ -113,33 +134,33 @@ input[type="checkbox"] {
 }
 
 .take-profit-section {
-    margin-top: 24px;
-    padding-top: 24px;
+    margin-top: 16px;
+    padding-top: 16px;
     border-top: 1px solid var(--border-color);
 }
 
 .tp-count-group {
-    margin-bottom: 16px;
+    margin-bottom: 12px;
 }
 
 .tp-inputs {
     display: grid;
-    gap: 16px;
+    gap: 12px;
 }
 
 .results-panel {
-    margin-top: 32px;
-    padding-top: 24px;
-    border-top: 1px solid var(--border-color);
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
 }
 
 .result-item {
-    margin-bottom: 16px;
+    margin-bottom: 12px;
 }
 
 .result-item h3 {
     font-size: 16px;
-    margin-bottom: 8px;
+    margin-bottom: 6px;
     color: var(--placeholder-color);
 }
 
@@ -148,27 +169,63 @@ input[type="checkbox"] {
     font-weight: 600;
 }
 
+.tp-result {
+    margin-bottom: 10px;
+    padding: 10px;
+    background-color: var(--container-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+}
+
+.tp-header {
+    font-size: 16px;
+    font-weight: 600;
+    margin-bottom: 6px;
+    color: var(--text-color);
+}
+
+.tp-profit {
+    font-size: 20px;
+    font-weight: 600;
+    color: var(--profit-color);
+    margin-bottom: 4px;
+}
+
+.tp-percentage {
+    font-size: 14px;
+    color: var(--placeholder-color);
+}
+
+#tp-details {
+    margin-top: 12px;
+}
+
+.total-tp-info {
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 1px solid var(--border-color);
+}
+
+#rrr-value {
+    color: var(--profit-color);
+}
+
+#rrr-value.loss {
+    color: var(--loss-color);
+}
+
 .hidden {
     display: none;
 }
 
 /* Responsive Design */
-@media (max-width: 480px) {
+@media (max-width: 768px) {
+    .calculator-wrapper {
+        flex-direction: column;
+    }
+
     .calculator-container {
-        padding: 16px;
-    }
-
-    .toggle-btn {
-        padding: 10px;
-    }
-
-    input[type="number"],
-    input[type="text"] {
-        padding: 10px;
-    }
-
-    .result-item p {
-        font-size: 20px;
+        width: 100%;
     }
 }
 
@@ -179,13 +236,13 @@ button:focus-visible {
     outline-offset: 2px;
 }
 
-/* Error states - only show when validation fails */
+/* Error states */
 input:invalid:not(:placeholder-shown) {
-    border-color: #ff4444;
+    border-color: var(--loss-color);
 }
 
 .error-message {
-    color: #ff4444;
+    color: var(--loss-color);
     font-size: 14px;
     margin-top: 4px;
 } 
