@@ -1,14 +1,82 @@
 :root {
-    --bg-color: #000000;
-    --container-bg: #101013;
-    --border-color: #434346;
-    --border-hover: #434346;
-    --text-color: #ffffff;
-    --placeholder-color: #89898b;
-    --active-bg: #ffffff;
-    --active-text: #101013;
-    --profit-color: #4CAF50;
-    --loss-color: #ff4444;
+    /* Dark theme colors */
+    --bg-color-dark: #000000;
+    --container-bg-dark: #101013;
+    --border-color-dark: #434346;
+    --border-hover-dark: #434346;
+    --text-color-dark: #ffffff;
+    --placeholder-color-dark: #89898b;
+    --active-bg-dark: #ffffff;
+    --active-text-dark: #101013;
+    --profit-color-dark: #4CAF50;
+    --loss-color-dark: #ff4444;
+
+    /* Light theme colors */
+    --bg-color-light: #ffffff;
+    --container-bg-light: #ffffff;
+    --border-color-light: #000000;
+    --border-hover-light: #000000;
+    --text-color-light: #000000;
+    --placeholder-color-light: #666666;
+    --active-bg-light: #000000;
+    --active-text-light: #ffffff;
+    --profit-color-light: #4CAF50;
+    --loss-color-light: #ff4444;
+
+    /* Default to system preference */
+    --bg-color: var(--bg-color-dark);
+    --container-bg: var(--container-bg-dark);
+    --border-color: var(--border-color-dark);
+    --border-hover: var(--border-hover-dark);
+    --text-color: var(--text-color-dark);
+    --placeholder-color: var(--placeholder-color-dark);
+    --active-bg: var(--active-bg-dark);
+    --active-text: var(--active-text-dark);
+    --profit-color: var(--profit-color-dark);
+    --loss-color: var(--loss-color-dark);
+}
+
+@media (prefers-color-scheme: light) {
+    :root {
+        --bg-color: var(--bg-color-light);
+        --container-bg: var(--container-bg-light);
+        --border-color: var(--border-color-light);
+        --border-hover: var(--border-hover-light);
+        --text-color: var(--text-color-light);
+        --placeholder-color: var(--placeholder-color-light);
+        --active-bg: var(--active-bg-light);
+        --active-text: var(--active-text-light);
+        --profit-color: var(--profit-color-light);
+        --loss-color: var(--loss-color-light);
+    }
+}
+
+/* Light theme class */
+.light-theme {
+    --bg-color: var(--bg-color-light);
+    --container-bg: var(--container-bg-light);
+    --border-color: var(--border-color-light);
+    --border-hover: var(--border-hover-light);
+    --text-color: var(--text-color-light);
+    --placeholder-color: var(--placeholder-color-light);
+    --active-bg: var(--active-bg-light);
+    --active-text: var(--active-text-light);
+    --profit-color: var(--profit-color-light);
+    --loss-color: var(--loss-color-light);
+}
+
+/* Dark theme class */
+.dark-theme {
+    --bg-color: var(--bg-color-dark);
+    --container-bg: var(--container-bg-dark);
+    --border-color: var(--border-color-dark);
+    --border-hover: var(--border-hover-dark);
+    --text-color: var(--text-color-dark);
+    --placeholder-color: var(--placeholder-color-dark);
+    --active-bg: var(--active-bg-dark);
+    --active-text: var(--active-text-dark);
+    --profit-color: var(--profit-color-dark);
+    --loss-color: var(--loss-color-dark);
 }
 
 * {
@@ -26,6 +94,26 @@ body {
     justify-content: center;
     align-items: center;
     padding: 20px;
+    position: relative;
+}
+
+.theme-toggle {
+    position: fixed;
+    left: 20px;
+    bottom: 20px;
+    padding: 8px 16px;
+    background-color: var(--container-bg);
+    border: 1px solid var(--border-color);
+    color: var(--text-color);
+    border-radius: 20px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-size: 14px;
+    z-index: 1000;
+}
+
+.theme-toggle:hover {
+    border-color: var(--border-hover);
 }
 
 .calculator-wrapper {
@@ -38,9 +126,9 @@ body {
 
 .calculator-container {
     background-color: var(--container-bg);
+    border: 1px solid var(--border-color);
     border-radius: 12px;
     padding: 20px;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
 
 .input-container {
@@ -137,15 +225,130 @@ input[type="checkbox"] {
     margin-top: 16px;
     padding-top: 16px;
     border-top: 1px solid var(--border-color);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
 }
 
-.tp-count-group {
-    margin-bottom: 12px;
+.tp-toggle-btn {
+    padding: 8px 16px;
+    background-color: var(--container-bg);
+    border: 1px solid var(--border-color);
+    color: var(--text-color);
+    border-radius: 20px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-size: 13px;
+    width: fit-content;
+}
+
+.tp-toggle-btn:hover {
+    border-color: var(--border-hover);
+}
+
+.tp-toggle-btn.active {
+    background-color: var(--active-bg);
+    color: var(--active-text);
+}
+
+.add-tp-btn {
+    padding: 6px 14px;
+    background-color: var(--container-bg);
+    border: 1px solid var(--border-color);
+    color: var(--text-color);
+    border-radius: 20px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-size: 13px;
+    margin-top: 12px;
+    width: fit-content;
+}
+
+.add-tp-btn:hover {
+    border-color: var(--border-hover);
 }
 
 .tp-inputs {
     display: grid;
     gap: 12px;
+    width: 100%;
+    margin-top: 16px;
+}
+
+.tp-input-group {
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+    position: relative;
+}
+
+.tp-input-container {
+    flex: 1;
+    position: relative;
+}
+
+.remove-tp-btn {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background-color: var(--placeholder-color);
+    border: none;
+    color: var(--container-bg);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    position: absolute;
+    right: -20px;
+    top: 35px;
+    opacity: 0.6;
+    transition: all 0.2s ease;
+}
+
+.remove-tp-btn:hover {
+    background-color: var(--loss-color);
+    opacity: 1;
+}
+
+.tp-percentage-container {
+    width: 80px;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    min-height: 76px;
+}
+
+.tp-percentage-value {
+    font-size: 14px;
+    color: var(--text-color);
+}
+
+.tp-distribution-btn {
+    padding: 4px 8px;
+    background-color: var(--container-bg);
+    border: 1px solid var(--border-color);
+    color: var(--text-color);
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-size: 12px;
+    margin-bottom: 4px;
+}
+
+.tp-distribution-btn:hover {
+    border-color: var(--border-hover);
+}
+
+.tp-distribution-btn.active {
+    background-color: var(--active-bg);
+    color: var(--active-text);
+}
+
+.tp-count-group {
+    margin-bottom: 12px;
 }
 
 .results-panel {
@@ -175,6 +378,20 @@ input[type="checkbox"] {
     background-color: var(--container-bg);
     border: 1px solid var(--border-color);
     border-radius: 8px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.tp-result-info {
+    flex: 1;
+}
+
+.tp-lot-size {
+    font-size: 14px;
+    color: var(--placeholder-color);
+    margin-left: 12px;
+    white-space: nowrap;
 }
 
 .tp-header {
@@ -182,6 +399,15 @@ input[type="checkbox"] {
     font-weight: 600;
     margin-bottom: 6px;
     color: var(--text-color);
+}
+
+.rrr-header {
+    font-size: 16px;
+    font-weight: 600;
+    margin-bottom: 6px;
+    color: var(--text-color);
+    padding-top: 16px;
+    border-top: 1px solid var(--border-color);
 }
 
 .tp-profit {
@@ -238,7 +464,7 @@ button:focus-visible {
 
 /* Error states */
 input:invalid:not(:placeholder-shown) {
-    border-color: var(--loss-color);
+    border-color: var(--border-color);
 }
 
 .error-message {
