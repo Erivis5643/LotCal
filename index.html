@@ -7,6 +7,7 @@
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
+    <button type="button" class="theme-toggle">Dark</button>
     <div class="calculator-wrapper">
         <main class="calculator-container input-container">
             <div class="mode-toggle">
@@ -59,19 +60,12 @@
                 </div>
 
                 <div class="take-profit-section">
-                    <div class="checkbox-group">
-                        <input type="checkbox" id="use-tp" name="use-tp">
-                        <label for="use-tp">Use take-profits</label>
-                    </div>
-
-                    <div class="tp-count-group hidden">
-                        <label for="tp-count">Number of TPs</label>
-                        <input type="number" id="tp-count" min="1" max="6" value="1">
-                    </div>
+                    <button type="button" id="use-tp" class="tp-toggle-btn">Add TP's</button>
 
                     <div id="tp-inputs" class="tp-inputs hidden">
                         <!-- TP inputs will be dynamically generated here -->
                     </div>
+                    <button type="button" id="add-tp" class="add-tp-btn hidden">Add new TP</button>
                 </div>
             </form>
         </main>
