@@ -4,13 +4,46 @@ document.addEventListener('DOMContentLoaded', () => {
     const modeToggles = document.querySelectorAll('.toggle-btn');
     const priceModeInputs = document.querySelectorAll('.price-mode');
     const pipModeInputs = document.querySelectorAll('.pip-mode');
-    const useTpCheckbox = document.getElementById('use-tp');
-    const tpCountGroup = document.querySelector('.tp-count-group');
-    const tpCountInput = document.getElementById('tp-count');
+    const useTpButton = document.getElementById('use-tp');
     const tpInputsContainer = document.getElementById('tp-inputs');
+    const addTpButton = document.getElementById('add-tp');
     const instrumentSelect = document.getElementById('instrument-select');
     const manualPipGroup = document.getElementById('manual-pip-group');
     const pipValueInput = document.getElementById('pip-value');
+    const themeToggle = document.querySelector('.theme-toggle');
+
+    // Theme handling
+    function setTheme(isDark) {
+        document.body.classList.toggle('dark-theme', isDark);
+        document.body.classList.toggle('light-theme', !isDark);
+        themeToggle.textContent = isDark ? 'Light' : 'Dark';
+        localStorage.setItem('theme', isDark ? 'dark' : 'light');
+    }
+
+    // Initialize theme
+    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    const savedTheme = localStorage.getItem('theme');
+    const isDark = savedTheme ? savedTheme === 'dark' : prefersDark;
+    setTheme(isDark);
+
+    // Theme toggle
+    themeToggle.addEventListener('click', () => {
+        const isDark = !document.body.classList.contains('dark-theme');
+        setTheme(isDark);
+    });
+
+    // Listen for system theme changes
+    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
+        if (!localStorage.getItem('theme')) {
+            setTheme(e.matches);
+        }
+    });
+
+    // State
+    let tpCount = 0;
+    let isTpEnabled = false;
+    let distributionMode = 'even';
+    let tpValues = new Map(); // Store TP values when switching modes
 
     // Instrument pip values
     const instrumentPipValues = {
@@ -38,72 +71,212 @@ document.addEventListener('DOMContentLoaded', () => {
     // Mode Toggle Handling
     modeToggles.forEach(toggle => {
         toggle.addEventListener('click', () => {
+            const oldMode = document.querySelector('.toggle-btn.active').dataset.mode;
+            const newMode = toggle.dataset.mode;
+            
+            // Store current TP values
+            if (isTpEnabled) {
+                tpValues.clear();
+                document.querySelectorAll('.tp-input-container input').forEach(input => {
+                    const index = parseInt(input.id.match(/\d+/)[0]);
+                    tpValues.set(index, input.value);
+                });
+            }
+            
             modeToggles.forEach(t => t.classList.remove('active'));
             toggle.classList.add('active');
             
-            const mode = toggle.dataset.mode;
             priceModeInputs.forEach(input => {
-                input.classList.toggle('hidden', mode === 'pip');
+                input.classList.toggle('hidden', newMode === 'pip');
             });
             pipModeInputs.forEach(input => {
-                input.classList.toggle('hidden', mode === 'price');
+                input.classList.toggle('hidden', newMode === 'price');
             });
             
-            // Clear and regenerate TP inputs if they exist
-            if (useTpCheckbox.checked) {
-                generateTPInputs(tpCountInput.value);
+            // Regenerate TP inputs if they exist
+            if (isTpEnabled) {
+                regenerateTPInputs();
             }
             
             updateCalculations();
         });
     });
 
-    // Take Profit Handling
-    useTpCheckbox.addEventListener('change', () => {
-        tpCountGroup.classList.toggle('hidden', !useTpCheckbox.checked);
-        tpInputsContainer.classList.toggle('hidden', !useTpCheckbox.checked);
-        document.getElementById('tp-results').classList.toggle('hidden', !useTpCheckbox.checked);
-        if (useTpCheckbox.checked) {
-            generateTPInputs(tpCountInput.value);
+    function updateDistribution() {
+        if (!isTpEnabled || tpCount === 0) return;
+
+        const showDistribution = tpCount > 2;
+        document.querySelectorAll('.tp-distribution-btn').forEach(btn => {
+            btn.style.display = showDistribution ? 'block' : 'none';
+        });
+        document.querySelectorAll('.tp-percentage-value').forEach(el => {
+            el.style.display = showDistribution ? 'block' : 'none';
+        });
+
+        if (!showDistribution) return;
+
+        const percentages = [];
+        if (distributionMode === 'even') {
+            const evenPercentage = 100 / tpCount;
+            for (let i = 0; i < tpCount; i++) {
+                percentages.push(evenPercentage);
+            }
+        } else {
+            let remainingPercentage = 100;
+            for (let i = 0; i < tpCount; i++) {
+                if (i === tpCount - 1) {
+                    percentages.push(remainingPercentage);
+                } else {
+                    const percentage = i === 0 ? 50 : remainingPercentage / 2;
+                    percentages.push(percentage);
+                    remainingPercentage -= percentage;
+                }
+            }
         }
+
+        document.querySelectorAll('.tp-percentage-value').forEach((element, index) => {
+            element.textContent = `${percentages[index].toFixed(1)}%`;
+        });
+
+        updateCalculations();
+    }
+
+    function removeTP(index) {
+        const inputGroup = document.querySelector(`#tp${index}-${document.querySelector('.toggle-btn.active').dataset.mode}`).closest('.tp-input-group');
+        inputGroup.remove();
+        tpCount--;
+        
+        // Renumber remaining TPs
+        const remainingInputs = document.querySelectorAll('.tp-input-group');
+        remainingInputs.forEach((group, i) => {
+            const newIndex = i + 1;
+            const input = group.querySelector('input');
+            const label = group.querySelector('label');
+            const mode = input.id.split('-')[1];
+            
+            input.id = `tp${newIndex}-${mode}`;
+            input.name = `tp${newIndex}-${mode}`;
+            label.htmlFor = `tp${newIndex}-${mode}`;
+            label.textContent = `TP${newIndex} ${mode === 'price' ? 'Price' : 'Distance'}`;
+            
+            // Update remove button visibility
+            const removeBtn = group.querySelector('.remove-tp-btn');
+            if (removeBtn) {
+                removeBtn.style.display = tpCount > 1 ? 'flex' : 'none';
+            }
+        });
+        
+        updateDistribution();
+        updateCalculations();
+    }
+
+    // Take Profit Handling
+    useTpButton.addEventListener('click', () => {
+        isTpEnabled = !isTpEnabled;
+        useTpButton.textContent = isTpEnabled ? 'Hide TP\'s' : 'Add TP\'s';
+        useTpButton.classList.toggle('active', isTpEnabled);
+        tpInputsContainer.classList.toggle('hidden', !isTpEnabled);
+        addTpButton.classList.toggle('hidden', !isTpEnabled);
+        document.getElementById('tp-results').classList.toggle('hidden', !isTpEnabled);
+        
+        if (isTpEnabled && tpCount === 0) {
+            addNewTP();
+        }
+        
         updateCalculations();
     });
 
-    tpCountInput.addEventListener('change', () => {
-        const count = Math.min(Math.max(1, parseInt(tpCountInput.value) || 1), 6);
-        tpCountInput.value = count;
-        generateTPInputs(count);
-        updateCalculations();
-    });
+    addTpButton.addEventListener('click', addNewTP);
+
+    function addNewTP() {
+        tpCount++;
+        const mode = document.querySelector('.toggle-btn.active').dataset.mode;
+        
+        const inputGroup = document.createElement('div');
+        inputGroup.className = 'tp-input-group';
+        
+        // Create percentage container
+        const percentageContainer = document.createElement('div');
+        percentageContainer.className = 'tp-percentage-container';
+        
+        // Add distribution button for first TP
+        if (tpCount === 1) {
+            const distributionBtn = document.createElement('button');
+            distributionBtn.type = 'button';
+            distributionBtn.className = 'tp-distribution-btn';
+            distributionBtn.textContent = 'Even';
+            distributionBtn.style.display = 'none';
+            distributionBtn.addEventListener('click', () => {
+                distributionMode = distributionMode === 'even' ? 'decline' : 'even';
+                distributionBtn.textContent = distributionMode === 'even' ? 'Even' : 'Decline';
+                updateDistribution();
+            });
+            percentageContainer.appendChild(distributionBtn);
+        }
+        
+        const percentageValue = document.createElement('div');
+        percentageValue.className = 'tp-percentage-value';
+        percentageValue.textContent = '0%';
+        percentageValue.style.display = 'none';
+        percentageContainer.appendChild(percentageValue);
+        
+        // Create input container
+        const inputContainer = document.createElement('div');
+        inputContainer.className = 'tp-input-container';
+        
+        const label = document.createElement('label');
+        label.htmlFor = `tp${tpCount}-${mode}`;
+        label.textContent = `TP${tpCount} ${mode === 'price' ? 'Price' : 'Distance'}`;
+        
+        const input = document.createElement('input');
+        input.type = 'number';
+        input.id = `tp${tpCount}-${mode}`;
+        input.name = `tp${tpCount}-${mode}`;
+        input.placeholder = `Enter TP${tpCount} ${mode === 'price' ? 'price' : 'distance'}`;
+        input.step = '0.00001';
+        input.required = true;
+        
+        // Add remove button
+        const removeBtn = document.createElement('button');
+        removeBtn.type = 'button';
+        removeBtn.className = 'remove-tp-btn';
+        removeBtn.innerHTML = '×';
+        removeBtn.style.display = tpCount > 1 ? 'flex' : 'none';
+        removeBtn.addEventListener('click', () => removeTP(tpCount));
+        
+        inputContainer.appendChild(label);
+        inputContainer.appendChild(input);
+        inputContainer.appendChild(removeBtn);
+        
+        inputGroup.appendChild(percentageContainer);
+        inputGroup.appendChild(inputContainer);
+        tpInputsContainer.appendChild(inputGroup);
+        
+        // Restore value if switching modes
+        if (tpValues.has(tpCount)) {
+            input.value = tpValues.get(tpCount);
+        }
+        
+        input.addEventListener('input', updateCalculations);
+        updateDistribution();
+        
+        // Update remove button visibility for all TPs
+        document.querySelectorAll('.remove-tp-btn').forEach(btn => {
+            btn.style.display = tpCount > 1 ? 'flex' : 'none';
+        });
+    }
+
+    function regenerateTPInputs() {
+        const oldCount = tpCount;
+        tpInputsContainer.innerHTML = '';
+        tpCount = 0;
+        for (let i = 1; i <= oldCount; i++) {
+            addNewTP();
+        }
+    }
 
     // Form Input Handling
     form.addEventListener('input', updateCalculations);
-
-    function generateTPInputs(count) {
-        tpInputsContainer.innerHTML = '';
-        const mode = document.querySelector('.toggle-btn.active').dataset.mode;
-        
-        for (let i = 1; i <= count; i++) {
-            const inputGroup = document.createElement('div');
-            inputGroup.className = 'input-group';
-            
-            const label = document.createElement('label');
-            label.htmlFor = `tp${i}-${mode}`;
-            label.textContent = `TP${i} ${mode === 'price' ? 'Price' : 'Distance'}`;
-            
-            const input = document.createElement('input');
-            input.type = 'number';
-            input.id = `tp${i}-${mode}`;
-            input.name = `tp${i}-${mode}`;
-            input.placeholder = `Enter TP${i} ${mode === 'price' ? 'price' : 'distance'}`;
-            input.step = '0.00001';
-            input.required = true;
-            
-            inputGroup.appendChild(label);
-            inputGroup.appendChild(input);
-            tpInputsContainer.appendChild(inputGroup);
-        }
-    }
 
     function updateCalculations() {
         try {
@@ -138,19 +311,38 @@ document.addEventListener('DOMContentLoaded', () => {
 
             // Calculate lot size
             const dollarRisk = accountBalance * (riskPercentage / 100);
-            const lotSize = dollarRisk / (stopLossDistance * pipValue);
+            const totalLotSize = dollarRisk / (stopLossDistance * pipValue);
 
             // Update lot size display
-            document.getElementById('lot-size').textContent = lotSize.toFixed(2);
+            document.getElementById('lot-size').textContent = totalLotSize.toFixed(2);
             document.getElementById('risk-amount').textContent = `$${dollarRisk.toFixed(2)} at risk`;
 
             // Calculate take profit values if enabled
-            if (useTpCheckbox.checked) {
+            if (isTpEnabled) {
                 const tpDetails = document.getElementById('tp-details');
                 tpDetails.innerHTML = '';
                 let totalProfit = 0;
-                const tpCount = parseInt(tpCountInput.value);
                 let allTPsSpecified = true;
+
+                // Calculate percentages based on distribution mode
+                const percentages = [];
+                if (distributionMode === 'even') {
+                    const evenPercentage = 100 / tpCount;
+                    for (let i = 0; i < tpCount; i++) {
+                        percentages.push(evenPercentage / 100);
+                    }
+                } else {
+                    let remainingPercentage = 100;
+                    for (let i = 0; i < tpCount; i++) {
+                        if (i === tpCount - 1) {
+                            percentages.push(remainingPercentage / 100);
+                        } else {
+                            const percentage = i === 0 ? 50 : remainingPercentage / 2;
+                            percentages.push(percentage / 100);
+                            remainingPercentage -= percentage;
+                        }
+                    }
+                }
 
                 for (let i = 1; i <= tpCount; i++) {
                     const tpInput = document.getElementById(`tp${i}-${mode}`);
@@ -169,6 +361,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         tpDistance = tpValue;
                     }
 
+                    const lotSize = totalLotSize * percentages[i - 1];
                     const tpProfit = tpDistance * pipValue * lotSize;
                     const tpPercentage = (tpProfit / accountBalance) * 100;
                     totalProfit += tpProfit;
@@ -177,9 +370,11 @@ document.addEventListener('DOMContentLoaded', () => {
                     const tpResult = document.createElement('div');
                     tpResult.className = 'tp-result';
                     tpResult.innerHTML = `
-                        <div class="tp-header">TP${i}</div>
-                        <div class="tp-profit">$${tpProfit.toFixed(2)}</div>
-                        <div class="tp-percentage">${tpPercentage.toFixed(2)}%</div>
+                        <div class="tp-result-info">
+                            <div class="tp-header">TP${i}</div>
+                            <div class="tp-profit">$${tpProfit.toFixed(2)}</div>
+                        </div>
+                        <div class="tp-lot-size">Lot: ${lotSize.toFixed(2)}</div>
                     `;
                     tpDetails.appendChild(tpResult);
                 }
@@ -208,6 +403,12 @@ document.addEventListener('DOMContentLoaded', () => {
                     const rrrElement = document.getElementById('rrr-value');
                     rrrElement.textContent = '0.00';
                     rrrElement.classList.remove('loss');
+                }
+
+                // Update RRR header style
+                const rrrHeader = document.querySelector('.result-item h3');
+                if (rrrHeader && rrrHeader.textContent === 'Risk-to-Reward Ratio') {
+                    rrrHeader.className = 'rrr-header';
                 }
             } else {
                 document.getElementById('tp-results').classList.add('hidden');
