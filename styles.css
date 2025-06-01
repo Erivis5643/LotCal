@@ -280,11 +280,63 @@ input[type="checkbox"] {
     gap: 12px;
     align-items: flex-start;
     position: relative;
+    transition: all 0.3s ease;
 }
 
 .tp-input-container {
     flex: 1;
     position: relative;
+    transition: all 0.3s ease;
+}
+
+.tp-percentage-container {
+    width: 0;
+    opacity: 0;
+    transition: all 0.3s ease;
+    overflow: hidden;
+}
+
+.tp-percentage-container.show {
+    width: 80px;
+    opacity: 1;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    min-height: 76px;
+}
+
+.tp-distribution-btn {
+    padding: 4px 8px;
+    background-color: var(--container-bg);
+    border: 1px solid var(--border-color);
+    color: var(--text-color);
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-size: 12px;
+    margin-bottom: 4px;
+    opacity: 0;
+    transform: translateY(-10px);
+}
+
+.tp-distribution-btn.show {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.tp-percentage-value {
+    font-size: 14px;
+    color: var(--text-color);
+    opacity: 0;
+    transform: translateY(-10px);
+    transition: all 0.3s ease;
+}
+
+.tp-percentage-value.show {
+    opacity: 1;
+    transform: translateY(0);
 }
 
 .remove-tp-btn {
@@ -302,49 +354,19 @@ input[type="checkbox"] {
     position: absolute;
     right: -20px;
     top: 35px;
-    opacity: 0.6;
+    opacity: 0;
+    transform: scale(0.8);
     transition: all 0.2s ease;
+}
+
+.remove-tp-btn.show {
+    opacity: 0.6;
+    transform: scale(1);
 }
 
 .remove-tp-btn:hover {
     background-color: var(--loss-color);
     opacity: 1;
-}
-
-.tp-percentage-container {
-    width: 80px;
-    text-align: center;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    min-height: 76px;
-}
-
-.tp-percentage-value {
-    font-size: 14px;
-    color: var(--text-color);
-}
-
-.tp-distribution-btn {
-    padding: 4px 8px;
-    background-color: var(--container-bg);
-    border: 1px solid var(--border-color);
-    color: var(--text-color);
-    border-radius: 12px;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    font-size: 12px;
-    margin-bottom: 4px;
-}
-
-.tp-distribution-btn:hover {
-    border-color: var(--border-hover);
-}
-
-.tp-distribution-btn.active {
-    background-color: var(--active-bg);
-    color: var(--active-text);
 }
 
 .tp-count-group {
@@ -365,6 +387,15 @@ input[type="checkbox"] {
     font-size: 16px;
     margin-bottom: 6px;
     color: var(--placeholder-color);
+}
+
+.result-item h3.rrr-header {
+    font-size: 16px;
+    font-weight: 600;
+    margin-bottom: 6px;
+    color: var(--text-color);
+    padding-top: 16px;
+    border-top: 1px solid var(--border-color);
 }
 
 .result-item p {
@@ -399,15 +430,6 @@ input[type="checkbox"] {
     font-weight: 600;
     margin-bottom: 6px;
     color: var(--text-color);
-}
-
-.rrr-header {
-    font-size: 16px;
-    font-weight: 600;
-    margin-bottom: 6px;
-    color: var(--text-color);
-    padding-top: 16px;
-    border-top: 1px solid var(--border-color);
 }
 
 .tp-profit {
