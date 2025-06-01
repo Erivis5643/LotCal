@@ -106,11 +106,14 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!isTpEnabled || tpCount === 0) return;
 
         const showDistribution = tpCount > 2;
+        document.querySelectorAll('.tp-percentage-container').forEach(container => {
+            container.classList.toggle('show', showDistribution);
+        });
         document.querySelectorAll('.tp-distribution-btn').forEach(btn => {
-            btn.style.display = showDistribution ? 'block' : 'none';
+            btn.classList.toggle('show', showDistribution);
         });
         document.querySelectorAll('.tp-percentage-value').forEach(el => {
-            el.style.display = showDistribution ? 'block' : 'none';
+            el.classList.toggle('show', showDistribution);
         });
 
         if (!showDistribution) return;
@@ -143,31 +146,36 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function removeTP(index) {
         const inputGroup = document.querySelector(`#tp${index}-${document.querySelector('.toggle-btn.active').dataset.mode}`).closest('.tp-input-group');
-        inputGroup.remove();
-        tpCount--;
+        inputGroup.style.opacity = '0';
+        inputGroup.style.transform = 'translateX(-20px)';
         
-        // Renumber remaining TPs
-        const remainingInputs = document.querySelectorAll('.tp-input-group');
-        remainingInputs.forEach((group, i) => {
-            const newIndex = i + 1;
-            const input = group.querySelector('input');
-            const label = group.querySelector('label');
-            const mode = input.id.split('-')[1];
+        setTimeout(() => {
+            inputGroup.remove();
+            tpCount--;
             
-            input.id = `tp${newIndex}-${mode}`;
-            input.name = `tp${newIndex}-${mode}`;
-            label.htmlFor = `tp${newIndex}-${mode}`;
-            label.textContent = `TP${newIndex} ${mode === 'price' ? 'Price' : 'Distance'}`;
+            // Renumber remaining TPs
+            const remainingInputs = document.querySelectorAll('.tp-input-group');
+            remainingInputs.forEach((group, i) => {
+                const newIndex = i + 1;
+                const input = group.querySelector('input');
+                const label = group.querySelector('label');
+                const mode = input.id.split('-')[1];
+                
+                input.id = `tp${newIndex}-${mode}`;
+                input.name = `tp${newIndex}-${mode}`;
+                label.htmlFor = `tp${newIndex}-${mode}`;
+                label.textContent = `TP${newIndex} ${mode === 'price' ? 'Price' : 'Distance'}`;
+                
+                // Update remove button visibility
+                const removeBtn = group.querySelector('.remove-tp-btn');
+                if (removeBtn) {
+                    removeBtn.classList.toggle('show', tpCount > 1);
+                }
+            });
             
-            // Update remove button visibility
-            const removeBtn = group.querySelector('.remove-tp-btn');
-            if (removeBtn) {
-                removeBtn.style.display = tpCount > 1 ? 'flex' : 'none';
-            }
-        });
-        
-        updateDistribution();
-        updateCalculations();
+            updateDistribution();
+            updateCalculations();
+        }, 300);
     }
 
     // Take Profit Handling
@@ -194,6 +202,8 @@ document.addEventListener('DOMContentLoaded', () => {
         
         const inputGroup = document.createElement('div');
         inputGroup.className = 'tp-input-group';
+        inputGroup.style.opacity = '0';
+        inputGroup.style.transform = 'translateX(-20px)';
         
         // Create percentage container
         const percentageContainer = document.createElement('div');
@@ -205,7 +215,6 @@ document.addEventListener('DOMContentLoaded', () => {
             distributionBtn.type = 'button';
             distributionBtn.className = 'tp-distribution-btn';
             distributionBtn.textContent = 'Even';
-            distributionBtn.style.display = 'none';
             distributionBtn.addEventListener('click', () => {
                 distributionMode = distributionMode === 'even' ? 'decline' : 'even';
                 distributionBtn.textContent = distributionMode === 'even' ? 'Even' : 'Decline';
@@ -217,7 +226,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const percentageValue = document.createElement('div');
         percentageValue.className = 'tp-percentage-value';
         percentageValue.textContent = '0%';
-        percentageValue.style.display = 'none';
         percentageContainer.appendChild(percentageValue);
         
         // Create input container
@@ -241,7 +249,6 @@ document.addEventListener('DOMContentLoaded', () => {
         removeBtn.type = 'button';
         removeBtn.className = 'remove-tp-btn';
         removeBtn.innerHTML = '×';
-        removeBtn.style.display = tpCount > 1 ? 'flex' : 'none';
         removeBtn.addEventListener('click', () => removeTP(tpCount));
         
         inputContainer.appendChild(label);
@@ -258,12 +265,15 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         
         input.addEventListener('input', updateCalculations);
-        updateDistribution();
         
-        // Update remove button visibility for all TPs
-        document.querySelectorAll('.remove-tp-btn').forEach(btn => {
-            btn.style.display = tpCount > 1 ? 'flex' : 'none';
-        });
+        // Trigger animation
+        setTimeout(() => {
+            inputGroup.style.opacity = '1';
+            inputGroup.style.transform = 'translateX(0)';
+            removeBtn.classList.toggle('show', tpCount > 1);
+        }, 50);
+        
+        updateDistribution();
     }
 
     function regenerateTPInputs() {
@@ -361,7 +371,8 @@ document.addEventListener('DOMContentLoaded', () => {
                         tpDistance = tpValue;
                     }
 
-                    const lotSize = totalLotSize * percentages[i - 1];
+                    let lotSize = totalLotSize * percentages[i - 1];
+                    lotSize = Math.max(0.01, lotSize); // Ensure minimum lot size of 0.01
                     const tpProfit = tpDistance * pipValue * lotSize;
                     const tpPercentage = (tpProfit / accountBalance) * 100;
                     totalProfit += tpProfit;
